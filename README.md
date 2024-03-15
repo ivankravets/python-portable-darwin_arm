@@ -1,2 +1,1 @@
-# python-portable-darwin_arm
-Portable Python for Mac ARM
+Portable Python for Apple ARM
