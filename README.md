@@ -1,1 +1,1 @@
-Portable Python for Apple ARM
+Portable Python for Apple ARM and x64
