@@ -34,7 +34,7 @@ jobs:
         make install
         ls -al /tmp/python3
 
-        tar cvf /tmp/python3.11.7-portable-darwin_arm64.tar =/tmp/python3
+        tar cvf /tmp/python3.11.7-portable-darwin_arm64.tar /tmp/python3
 
     - name: Release
       uses: jason2866/action-gh-release@v1.3
