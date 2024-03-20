@@ -24,9 +24,9 @@ jobs:
         brew update
         brew install bash libtool automake
 
-        wget https://www.python.org/ftp/python/3.11.7/Python-3.11.7.tar.xz
-        tar xvf Python-3.11.7.tar.xz
-        cd Python-3.11.7
+        wget https://www.python.org/ftp/python/3.11.8/Python-3.11.8.tar.xz
+        tar xvf Python-3.11.8.tar.xz
+        cd Python-3.11.8
         
         # Build!
         ./configure --prefix=/tmp/python3
@@ -34,10 +34,10 @@ jobs:
         make install
         ls -al /tmp/python3
 
-        tar czvf /tmp/python3.11.7-portable-darwin_arm64.tar.gz /tmp/python3
+        tar czvf /tmp/python3.11.8-portable-darwin_arm64.tar.gz /tmp/python3
 
     - name: Release
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: /tmp/python3.11.7-portable-darwin_arm64.tar.gz
+        files: /tmp/python3.11.8-portable-darwin_arm64.tar.gz
