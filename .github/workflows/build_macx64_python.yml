@@ -37,7 +37,7 @@ jobs:
         tar zcvf /tmp/python3.11.7-portable-darwin_arm64.tar.gz /tmp/python3
 
     - name: Release
-      uses: jason2866/action-gh-release@v1.3
+      uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: /tmp/python3.11.7-portable-darwin_arm64.tar.gz
