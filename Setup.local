@@ -1,0 +1,6 @@
+# Note: static archives .a must be added at the front of the command,
+# otherwise there will be obscure compilation error because of broken
+# compiler command
+OPENSSL=$(GITHUB_WORKSPACE)/openssl-local-bin-$(TARGET_ARCHITECUTRE)
+_ssl _ssl.c $(OPENSSL)/lib/libssl.a $(OPENSSL)/lib/libcrypto.a -I$(OPENSSL)/include -L$(OPENSSL)/lib
+_hashlib _hashopenssl.c $(OPENSSL)/lib/libcrypto.a -I$(OPENSSL)/include -L$(OPENSSL)/lib

@@ -1,0 +1,44 @@
+name: Build Python3 binaries with static OpenSSL for Mac
+
+on:
+  # push:
+  workflow_dispatch:
+    inputs:
+      openssl-link:
+        description: "Link to OpenSSL sources in a form of a tar archive"
+        default: "https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz"
+      python-link:
+        description: "Link to Python sources in a form of a tar archive"
+        default: "https://www.python.org/ftp/python/3.11.7/Python-3.11.7.tar.xz"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        targets:
+          - arch: darwin_arm64
+            runner: macos-14
+          - arch: darwin_x86_64
+            runner: macos-latest
+
+    runs-on: ${{ matrix.targets.runner }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Prepare folders
+        run: mkdir $GITHUB_WORKSPACE/packages
+      - uses: ./.github/actions/common-build
+        with:
+          binary-architecture: ${{ matrix.targets.arch }}
+          openssl-link: ${{ github.event.inputs.openssl-link || 'https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz'}}
+          python-link: ${{ github.event.inputs.python-link || 'https://www.python.org/ftp/python/3.11.7/Python-3.11.7.tar.xz'}}
+          archive-name: python-portable-static-openssl-${{ matrix.targets.arch }}.tar.gz
+          destination-folder: $GITHUB_WORKSPACE/packages
+      - name: Show packages
+        run: ls -al $GITHUB_WORKSPACE/packages
+
+      - name: Upload production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python3-${{ matrix.targets.arch }}
+          path: packages/python-static-openssl-${{ matrix.targets.arch }}.tar.gz
+          if-no-files-found: error
