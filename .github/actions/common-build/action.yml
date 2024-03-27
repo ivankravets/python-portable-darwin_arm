@@ -1,0 +1,83 @@
+name: 'Common routine'
+description: 'This actions provides the core functionality for compiling Python with static OpenSSL'
+
+inputs:
+  binary-architecture:
+    description: 'This value is the name of the final tar.gz archive'
+    required: true
+  openssl-link:
+    description: 'Link to OpenSSL sources in a form of tar.gz archive'
+    required: true
+    default: 'https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz'
+  python-link:
+    description: 'Link to Python sources in a form of tar.gz archive'
+    required: true
+    default: 'https://www.python.org/ftp/python/3.11.7/Python-3.11.7.tar.xz'
+  destination-folder:
+    description: 'Path to a folder where final package will be stored'
+    default: '$GITHUB_WORKSPACE/packages'
+  archive-name:
+    description: 'The name of an archive with Python binaries'
+    default: 'python-portable-static-openssl.tar.gz'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Show source data
+      shell: bash
+      run: |
+        echo "#####"
+        echo "Compiling packages for ${{ inputs.binary-architecture }}"
+        echo "Using OpenSSL from ${{ inputs.openssl-link }}"
+        echo "Using Pyhon from ${{ inputs.python-link }}"
+        echo "Package will be stored in ${{ inputs.destination-folder }}"
+        echo "#####"
+    - name: Compile OpenSSL
+      shell: bash
+      run: |
+        # Pull and extract OpenSSL sources
+        wget -q ${{ inputs.openssl-link }}
+        # Create folder for sources in advance
+        mkdir openssl-local-src
+        tar xf $(basename ${{ inputs.openssl-link }}) -C openssl-local-src --strip-components=1
+        
+        # Compile and install OpenSSL to a local folder
+        cd openssl-local-src
+        ./config --prefix=$GITHUB_WORKSPACE/openssl-local-bin-${{ inputs.binary-architecture }} --openssldir=$GITHUB_WORKSPACE/openssl-local-bin-${{ inputs.binary-architecture }}
+        make && make install_sw
+    - name: Compile Python3 and add a new artifact
+      shell: bash
+      env:
+        # Pass the target architecture input as an ENV var to Setup.local
+        TARGET_ARCHITECUTRE: ${{ inputs.binary-architecture }}
+      run: |
+        # Pull and extract Python sources 
+        wget -q ${{ inputs.python-link }}
+        mkdir python-local-src
+        tar xf $(basename ${{ inputs.python-link }}) -C python-local-src --strip-components=1
+
+        # Remove all bundled OpenSSL instances as it will be built from sources
+        brew uninstall --ignore-dependencies openssl@3 openssl@1.1
+
+        # Copy Setup.local file with enabled static OpenSSL bindings
+        cp Setup.local python-local-src/Modules/Setup.local
+        cat python-local-src/Modules/Setup.local
+        
+        # Compile and install Python to a local folder
+        cd python-local-src
+        ./configure --with-openssl=$GITHUB_WORKSPACE/openssl-local-bin-$TARGET_ARCHITECUTRE --prefix=$GITHUB_WORKSPACE/python-portable-built-$TARGET_ARCHITECUTRE --disable-shared
+        make && make install
+
+        # Create a tar.gz archive for further processing as an artifact
+        cd $GITHUB_WORKSPACE/python-portable-built-$TARGET_ARCHITECUTRE
+        tar czvf ${{ inputs.destination-folder }}/python-static-openssl-$TARGET_ARCHITECUTRE.tar.gz *
+        cd $GITHUB_WORKSPACE
+    - name: Print debug info and test binary
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE
+        python-portable-built-${{ inputs.binary-architecture }}/bin/python3 --version
+        python-portable-built-${{ inputs.binary-architecture }}/bin/python3 -m venv penv
+        penv/bin/python3 -c "import ssl; print(ssl.OPENSSL_VERSION)"
+        penv/bin/python3 -m pip install platformio --no-cache-dir
+        penv/bin/pio pkg install -g -p atmelavr
